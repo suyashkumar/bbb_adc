@@ -1,0 +1,60 @@
+/*
+Sets and muxes the following pins to appropiate settings 
+for PRU0 digital access via register 31
+
+Use Mode 0x26 for pulldown and 0x36 for pullup.
+
+Bit     Pin     
+0       P9_31
+1       P9_29
+2       P9_30
+3       P9_28
+4       P9_42
+5       P9_27
+6       P9_41
+7       P9_25
+
+@author Suyash Kumar <suyash.kumar@duke.edu>
+*/
+
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+    part_number = "test";
+
+    exclusive-use =
+        "P9.29",
+        "NA";
+
+    fragment@0 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+            bs_pinmode_P9_29_0x36: pinmux_bs_pinmode_P9_29_0x36 {
+                pinctrl-single,pins = <
+			0x194 0x26 /* P_29, 0x26 for pulldown */
+			0x190 0x26 /* P9_31 */
+			0x198 0x26 /* P9_30 */
+			0x19c 0x26 /* P9_28 */
+			0x164 0x26 /* P9_42 */
+			0x1a4 0x26 /* P9_27 */
+			0x1b4 0x26 /* P9_41 */
+			0x1ac 0x26 /* P9_25 */	
+		>;
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&ocp>;
+        __overlay__ {
+            bs_pinmode_P9_29_0x36_pinmux {
+                compatible = "bone-pinmux-helper";
+                status = "okay";
+                pinctrl-names = "default";
+                pinctrl-0 = <&bs_pinmode_P9_29_0x36>;
+            };
+        };
+    };
+};
