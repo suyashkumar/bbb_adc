@@ -19,6 +19,9 @@
 #define BUFF_SIZE 0x00000FA0 //Total buff size: 4kbyte(Each buffer has 2kbyte: 500 piece of data)
 #define HALF_SIZE BUFF_SIZE / 2
 
+#define GPIO1 0x4804c000
+#define GPIO_CLEARDATAOUT 0x190
+#define GPIO_SETDATAOUT 0x194
 //TODO: Figure out how to make this more parametric. e.g. actually use the
 //      params below or have dynamically set and assembled by C code.           
 #define SAMPLING_RATE 2000000 //Sampling rate(560 khz)
@@ -30,9 +33,9 @@
 //#define DELAYCOUNT (DELAY_NANO_SECONDS/1000) * CLOCK / CLOCKS_PER_LOOP / 1000 / 1000 * 3
 #define DELAYCOUNT (CLOCK * DELAY_NANO_SECONDS / 1000000000)/2
 // Set ADC_CLKDIV
-    MOV ADDR,ADC_TSC
-    MOV VALUE,0x00000000   //the 24MHz-clock rate is divided by VALUE+1 to yield ADC_CLOCK 
-    SBBO VALUE,ADDR,0x4C,4 //important to write all 4 bytes even though only the first 2 count - if this is not done, the change doesnt take effect for some reason  
+//    MOV ADDR,ADC_TSC
+//    MOV VALUE,0x00000000   //the 24MHz-clock rate is divided by VALUE+1 to yield ADC_CLOCK 
+//    SBBO VALUE,ADDR,0x4C,4 //important to write all 4 bytes even though only the first 2 count - if this is not done, the change doesnt take effect for some reason  
 .macro DELAY
     //MOV r10, 1
     DELAY:
@@ -44,19 +47,18 @@
     //Initialize buffer status (0: empty, 1: first buffer is ready, 2: second buffer is ready)
     MOV r2, 0
     SBCO r2, CONST_PRUSHAREDRAM, 0, 4  // Load 0 into first 4 bytes at shared ram mem address.
-
+    
     INITV:
         MOV r5, 0 // Offset (shared ram saving position)
         MOV r6, BUFF_SIZE  // Counts how much of total buffer used 
 
     READ:
         //Read ADC from FIFO0DATA
-        MOV r2, 0x44E0D100 // Put ADC read mem address into r2
-        LBBO r3, r2, 0, 4 // Load 4 bytes from adc mem address in r1+0 into r3
+        MOV r2, r31 // Put ADC data from r31 into r2 
         ADD r5, r5, 4 // update offset from CONST_PRUSHAREDRAM
-        SBCO r3, CONST_PRUSHAREDRAM, r5, 4 // Write ADC value to offset location in shared RAM
+        SBCO r31.b0, CONST_PRUSHAREDRAM, r5, 4 // Write ADC value to offset location in shared RAM
 
-        //DELAY
+
         SUB r6, r6, 4 // Subtract 4 bytes from buffer size counter
         MOV r2, HALF_SIZE 
         QBEQ CHBUFFSTATUS1, r6, r2 // First buffer is ready to be read

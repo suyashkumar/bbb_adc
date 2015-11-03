@@ -28,7 +28,7 @@ Based on work done by Youngtae Jo.
 /******************************************************************************
 * Local Macro Declarations                                                    * 
 ******************************************************************************/
-#define PRU_NUM 	 0
+#define PRU_NUM 	0 
 #define OFFSET_SHAREDRAM 2048		//equivalent with 0x00002000
 #define PRUSS0_SHARED_DATARAM    4
 #define SAMPLING_RATE 16000 //16khz
