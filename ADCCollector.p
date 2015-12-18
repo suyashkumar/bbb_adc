@@ -1,14 +1,10 @@
-// Developed by Youngtae Jo in Kangwon National University (April-2014)
-// Modified by Suyash Kumar at Duke University (sk317) to fix timing bugs,
-// increase acquisition speed by setting ADC_CLKDIV, and more. 
+// By Suyash Kumar at Duke University (sk317)  
+// Based on work by Youngtae Jo in Kangwon National University (April-2014)
 
 // This program collects ADC from AIN0 with certain sampling rate.
 // The collected data are stored into PRU shared memory(buffer) first.
 // The host program(ADCCollector.c) will read the stored ADC data
-// This program uses double buffering technique. 
-// The host program can recognize the buffer status by buffer status variable
-// 0 means empty, 1 means first buffer is ready, 2 means second buffer is ready.
-// When each buffer is ready, host program read ADC data from the buffer.
+
 
 
 .origin 0 // offset of the start of the code in PRU memory
@@ -16,6 +12,7 @@
 
 #include "ADCCollector.hp"
 
+//#define BUFF_SIZE 0x00000FA0 //Total buff size: 4kbyte(Each buffer has 2kbyte: 500 piece of data)
 #define BUFF_SIZE 0x00000FA0 //Total buff size: 4kbyte(Each buffer has 2kbyte: 500 piece of data)
 #define HALF_SIZE BUFF_SIZE / 2
 
@@ -45,22 +42,22 @@
 
     INITV:
         MOV r5, 0 //Shared RAM address of ADC Saving position 
-        MOV r6, BUFF_SIZE  //Counting variable 
+        MOV r6, BUFF_SIZE  // Counter
 
     READ:
         //Read ADC from FIFO0DATA
         MOV r2, 0x44E0D100 
-        LBBO r3, r2, 0, 4 
+        LBBO r3, r2, 0, 4 // Load 4 bytes from adc mem address in r1+0 into r3
         //Add address counting
-        ADD r5, r5, 4
+        ADD r5, r5, 4 //offset from CONST_PRUSHAREDRAM
         //Write ADC to PRU Shared RAM
-        SBCO r3, CONST_PRUSHAREDRAM, r5, 4 
+        SBCO r3, CONST_PRUSHAREDRAM, r5, 4 // Write ADC value to offset location in RAM
 
         //DELAY
         
-        SUB r6, r6, 4
-        MOV r2, HALF_SIZE
-        QBEQ CHBUFFSTATUS1, r6, r2 //If first buffer is ready
+        SUB r6, r6, 4 // Subtract 4 bytes from buffer size counter
+        //MOV r2, HALF_SIZE 
+        //QBEQ CHBUFFSTATUS1, r6, r2 //If first buffer is ready
         QBEQ CHBUFFSTATUS2, r6, 0 //If second buffer is ready
         QBA READ
 

@@ -89,17 +89,11 @@ int main (int argc, char* argv[])
 	/* Read ADC */
 	while(1){
 		while(1){
-			if(sharedMem_int[OFFSET_SHAREDRAM] == 1 && target_buff == 1){ // First buffer is ready
+			if(sharedMem_int[OFFSET_SHAREDRAM] == 2 ){ // Buffer ready
 				for(i=0; i<PRU_SHARED_BUFF_SIZE; i++){
 					fprintf(fp_out, "%d\n", ProcessingADC1(sharedMem_int[OFFSET_SHAREDRAM + 1 + i]));
 				}
-				target_buff = 2;
-				break;
-			}else if(sharedMem_int[OFFSET_SHAREDRAM] == 2 && target_buff == 2){ // Second buffer is ready
-				for(i=0; i<PRU_SHARED_BUFF_SIZE; i++){
-					fprintf(fp_out, "%d\n", ProcessingADC1(sharedMem_int[OFFSET_SHAREDRAM + PRU_SHARED_BUFF_SIZE + 1 + i]));
-				}
-				target_buff = 1;
+				//target_buff = 2;
 				break;
 			}
 		}
