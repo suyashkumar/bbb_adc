@@ -1,5 +1,6 @@
 // Developed by Youngtae Jo in Kangwon National University (April-2014)
-// Modified by Suyash Kumar at Duke University (sk317)
+// Modified by Suyash Kumar at Duke University (sk317) to fix timing bugs,
+// increase acquisition speed by setting ADC_CLKDIV, and more. 
 
 // This program collects ADC from AIN0 with certain sampling rate.
 // The collected data are stored into PRU shared memory(buffer) first.
@@ -20,16 +21,20 @@
 
 #define SAMPLING_RATE 2000000 //Sampling rate(560 khz)
 //#define DELAY_NANO_SECONDS (1000000000 / SAMPLING_RATE) //Delay by sampling rate
-#define DELAY_NANO_SECONDS 10
-//#define DELAY_MICRO_SECONDS (1000000 / SAMPLING_RATE)
+#define DELAY_NANO_SECONDS 2000
+#define DELAY_MICRO_SECONDS (1000000 / SAMPLING_RATE)
 #define CLOCK 200000000 // PRU is always clocked at 200MHz
 #define CLOCKS_PER_LOOP 2 // loop contains two instructions, one clock each
 //#define DELAYCOUNT (DELAY_NANO_SECONDS/1000) * CLOCK / CLOCKS_PER_LOOP / 1000 / 1000 * 3
 #define DELAYCOUNT (CLOCK * DELAY_NANO_SECONDS / 1000000000)/2
+// Set ADC_CLKDIV
+    MOV ADDR,ADC_TSC
+    MOV VALUE,0x00000000   //the 24MHz-clock rate is divided by VALUE+1 to yield ADC_CLOCK 
+    SBBO VALUE,ADDR,0x4C,4 //important to write all 4 bytes even though only the first 2 count - if this is not done, the change doesnt take effect for some reason  
 .macro DELAY
     //MOV r10, 1
     DELAY:
-       //SUB r10, r10, 1
+      // SUB r10, r10, 1
        //QBNE DELAY, r10, 0
 .endm
 
@@ -51,7 +56,7 @@
         //Write ADC to PRU Shared RAM
         SBCO r3, CONST_PRUSHAREDRAM, r5, 4 
 
-        DELAY
+        //DELAY
         
         SUB r6, r6, 4
         MOV r2, HALF_SIZE

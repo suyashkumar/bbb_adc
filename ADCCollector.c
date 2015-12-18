@@ -135,7 +135,7 @@ static int Enable_ADC()
 {
 	FILE *ain;
 
-	ain = fopen("/sys/devices/bone_capemgr.8/slots", "w");
+	ain = fopen("/sys/devices/bone_capemgr.9/slots", "w");
 	if(!ain){
 		printf("\tERROR: /sys/devices/bone_capemgr.8/slots open failed\n");
 		return -1;
@@ -151,7 +151,7 @@ static int Enable_PRU()
 {
 		FILE *ain;
 
-		ain = fopen("/sys/devices/bone_capemgr.8/slots", "w");
+		ain = fopen("/sys/devices/bone_capemgr.9/slots", "w");
 		if(!ain){
 			printf("\tERROR: /sys/devices/bone_capemgr.8/slots open failed\n");
 			return -1;

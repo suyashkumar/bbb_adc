@@ -13,7 +13,10 @@
 #ifndef _PRU_memAccess_DDR_PRUsharedRAM_HP_
 #define _PRU_memAccess_DDR_PRUsharedRAM_HP_
 
-
+#define ADC_TSC    0x44E0D000
+#define VALUE r4
+#define ADDR r3
+#DEFINE ADC_CLKDIV 0x44E0D04C
 // ***************************************
 // *      Global Macro definitions       *
 // ***************************************
