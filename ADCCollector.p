@@ -38,7 +38,7 @@
        //QBNE DELAY, r10, 0
 .endm
 
-macro READADC
+.macro READADC
     //Initialize buffer status (0: empty, 1: first buffer is ready, 2: second buffer is ready)
     MOV r2, 0
     SBCO r2, CONST_PRUSHAREDRAM, 0, 4  // Load 0 into first 4 bytes at shared ram mem address.
