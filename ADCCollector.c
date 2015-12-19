@@ -63,7 +63,7 @@ int main (int argc, char* argv[])
 	int sampling_period = 0;
 
 	if(argc <= 2){
-	    print_err("\nError not enough arguments supplied");
+	    print_err("\nError: not enough arguments supplied");
 		printf("\e[0;32mUsage: ADCCollector [num seconds] [output file]\e[0m\n\n");
 		return 0;
 	}
@@ -87,14 +87,14 @@ int main (int argc, char* argv[])
 	/* Open save file */
 	fp_out = fopen(argv[2], "w");
 	if(fp_out == NULL){
-		print_err("\tERROR: file open failed\n");
+		print_err("\tERROR: Output file open failed\n");
 		return 0;
 	}
 
 	/* Executing PRU. */
-	printf("\tSampling is started for %d seconds\n", sampling_period);
+	printf("\tSampling started for %d seconds\n", sampling_period);
     printf("\tCollecting");
-    prussdrv_exec_program (PRU_NUM, "./ADCCollector.bin");
+    prussdrv_exec_program (PRU_NUM, "./ADCCollector.bin"); 
 	/* Read ADC */
 	while(1){
 		while(1){
@@ -112,7 +112,7 @@ int main (int argc, char* argv[])
 				break;
 			}
 		}
-
+        //TODO: fix this second/sample counting to be right
 		if(++cnt == CNT_ONE_SEC){
 			printf(".");
 			total_cnt += cnt;
@@ -120,7 +120,7 @@ int main (int argc, char* argv[])
 		}
 
 		if(total_cnt == CNT_ONE_SEC * sampling_period){
-			printf("\n\tINFO: Sampling completed ...\n");
+			printf("\n\tINFO: Sampling completed.\n");
 			break;
 		}
 	}

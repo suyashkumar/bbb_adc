@@ -19,6 +19,8 @@
 #define BUFF_SIZE 0x00000FA0 //Total buff size: 4kbyte(Each buffer has 2kbyte: 500 piece of data)
 #define HALF_SIZE BUFF_SIZE / 2
 
+//TODO: Figure out how to make this more parametric. e.g. actually use the
+//      params below or have dynamically set and assembled by C code.           
 #define SAMPLING_RATE 2000000 //Sampling rate(560 khz)
 //#define DELAY_NANO_SECONDS (1000000000 / SAMPLING_RATE) //Delay by sampling rate
 #define DELAY_NANO_SECONDS 2000
