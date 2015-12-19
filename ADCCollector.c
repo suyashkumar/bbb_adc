@@ -1,3 +1,13 @@
+/*
+ADCCollector.c 
+A wrapper program that launches a program on a PRU to collect samples from the 
+ADC's AIN0 and put them in memory where this wrapper program can successively 
+grab them and save them to disk. 
+Usage: 
+@author Suyash Kumar
+@author Youngtae Jo
+Based on work done by Youngtae Jo. 
+*/
 /******************************************************************************
 * Include Files                                                               *
 ******************************************************************************/
@@ -20,7 +30,6 @@
 ******************************************************************************/
 #define PRU_NUM 	 0
 #define OFFSET_SHAREDRAM 2048		//equivalent with 0x00002000
-
 #define PRUSS0_SHARED_DATARAM    4
 #define SAMPLING_RATE 16000 //16khz
 #define BUFF_LENGTH SAMPLING_RATE
@@ -30,9 +39,10 @@
 /******************************************************************************
 * Functions declarations                                                      * 
 ******************************************************************************/
-static int Enable_ADC();
-static int Enable_PRU();
-static unsigned int ProcessingADC1(unsigned int value);
+static int enable_adc();
+static int enable_pru();
+void print_err(char* input);
+//static unsigned int ProcessingADC1(unsigned int value);
 
 /******************************************************************************
 * Global variable Declarations                                                * 
@@ -52,52 +62,51 @@ int main (int argc, char* argv[])
 	int target_buff = 1;
 	int sampling_period = 0;
 
-	if(argc < 2){
-		printf("\tERROR: Sampling period is required by second\n");
-		printf("\t       %s [sampling period]\n", argv[0]);
+	if(argc <= 2){
+	    print_err("\nError not enough arguments supplied");
+		printf("\e[0;32mUsage: ADCCollector [num seconds] [output file]\e[0m\n\n");
 		return 0;
 	}
 	sampling_period = atoi(argv[1]);
 
-	/* Enable PRU */
-	Enable_PRU();
-	/* Enable ADC */
-	Enable_ADC();
+	enable_pru(); // Enable PRU
+	enable_adc(); // Enable ADC
+	
 	/* Initializing PRU */
     prussdrv_init();
     ret = prussdrv_open(PRU_EVTOUT_0);
     if (ret){
-        printf("\tERROR: prussdrv_open open failed\n");
+        print_err("ERROR: prussdrv_open open failed\n");
         return (ret);
     }
     prussdrv_pruintc_init(&pruss_intc_initdata);
     printf("\tINFO: Initializing.\r\n");
-    prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, &sharedMem);
-    sharedMem_int = (unsigned int*) sharedMem;
+    prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, &sharedMem); // sharedMem points to proper loc now
+    sharedMem_int = (unsigned int*) sharedMem; // cast to int*
 	
 	/* Open save file */
 	fp_out = fopen(argv[2], "w");
 	if(fp_out == NULL){
-		printf("\tERROR: file open failed\n");
+		print_err("\tERROR: file open failed\n");
 		return 0;
 	}
 
 	/* Executing PRU. */
-	printf("\tINFO: Sampling is started for %d seconds\n", sampling_period);
-    printf("\tINFO: Collecting");
+	printf("\tSampling is started for %d seconds\n", sampling_period);
+    printf("\tCollecting");
     prussdrv_exec_program (PRU_NUM, "./ADCCollector.bin");
 	/* Read ADC */
 	while(1){
 		while(1){
 			if(sharedMem_int[OFFSET_SHAREDRAM] == 1 && target_buff == 1){ // First buffer is ready
 				for(i=0; i<PRU_SHARED_BUFF_SIZE; i++){
-					fprintf(fp_out, "%d\n", ProcessingADC1(sharedMem_int[OFFSET_SHAREDRAM + 1 + i]));
+					fprintf(fp_out, "%d\n", sharedMem_int[OFFSET_SHAREDRAM + i + 1]);
 				}
 				target_buff = 2;
 				break;
 			}else if(sharedMem_int[OFFSET_SHAREDRAM] == 2 && target_buff == 2){ // Second buffer is ready
 				for(i=0; i<PRU_SHARED_BUFF_SIZE; i++){
-					fprintf(fp_out, "%d\n", ProcessingADC1(sharedMem_int[OFFSET_SHAREDRAM + PRU_SHARED_BUFF_SIZE + 1 + i]));
+					fprintf(fp_out, "%d\n", sharedMem_int[OFFSET_SHAREDRAM + PRU_SHARED_BUFF_SIZE + i + 1]);
 				}
 				target_buff = 1;
 				break;
@@ -131,48 +140,40 @@ int main (int argc, char* argv[])
 * Local Function Definitions                                                 *
 *****************************************************************************/
 /* Enable ADC */
-static int Enable_ADC()
+static int enable_adc()
 {
 	FILE *ain;
 
 	ain = fopen("/sys/devices/bone_capemgr.9/slots", "w");
 	if(!ain){
-		printf("\tERROR: /sys/devices/bone_capemgr.8/slots open failed\n");
+		print_err("\tERROR: /sys/devices/bone_capemgr.9/slots open failed\n");
 		return -1;
 	}
 	fseek(ain, 0, SEEK_SET);
 	fprintf(ain, "cape-bone-iio");
-	fflush(ain);
+	fclose(ain);
 	return 0;
 }
 
 /* Enable PRU */
-static int Enable_PRU()
+static int enable_pru()
 {
 		FILE *ain;
-
 		ain = fopen("/sys/devices/bone_capemgr.9/slots", "w");
 		if(!ain){
-			printf("\tERROR: /sys/devices/bone_capemgr.8/slots open failed\n");
+			print_err("\tERROR: /sys/devices/bone_capemgr.9/slots open failed\n");
 			return -1;
 		}
 		fseek(ain, 0, SEEK_SET);
 		fprintf(ain, "BB-BONE-PRU-01");
-		fflush(ain);
+		fclose(ain);
 		return 0;
 }
-
-/* 
- * FIFO0DATA register includes both ADC and channelID
- * so we need to remove the channelID
- */
-static unsigned int ProcessingADC1(unsigned int value)
-{
-	unsigned int result = 0;
-
-	result = value << 20;
-	result = result >> 20;
-
-	return result;
+/*
+print_err()
+Prints message (input) to screen in red font using terminal color codes. 
+@param char* input: input string that describes the error
+*/
+void print_err(char* input){
+    printf("\e[1;31m%s\e[0m\n",input);
 }
-
