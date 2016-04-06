@@ -51,32 +51,18 @@
     INITV:
         MOV r5, 0 // Offset (shared ram saving position)
         MOV r6, BUFF_SIZE  // Counts how much of total buffer used 
+        MOV r2, 0 // put 0 in r2
 
     READ:
-        //Read ADC from FIFO0DATA
-        MOV r2, r31 // Put ADC data from r31 into r2 
+        //Read ADC from FIFO0DATA 
         ADD r5, r5, 4 // update offset from CONST_PRUSHAREDRAM
-        SBCO r31.b0, CONST_PRUSHAREDRAM, r5, 4 // Write ADC value to offset location in shared RAM
+        SBCO r31.b0, CONST_PRUSHAREDRAM, r5, 4 // Write ADC value to offset location in shared RAM 
+        SUB r6, r6, 4 // Subtract 4 bytes from buffer size counter 
+        QBNE READ, r6, r2 // Branch to READ if r6!=0 
 
-
-        SUB r6, r6, 4 // Subtract 4 bytes from buffer size counter
-        MOV r2, HALF_SIZE 
-        QBEQ CHBUFFSTATUS1, r6, r2 // First buffer is ready to be read
-        QBEQ CHBUFFSTATUS2, r6, 0 // Second buffer is ready to be read
-        QBA READ
-        
-    //Change buffer status to 1
-    CHBUFFSTATUS1:
-        MOV r2, 1 
-        SBCO r2, CONST_PRUSHAREDRAM, 0, 4 // Write 1 to the first 4 bytes of shared mem
-        QBA READ
-
-    //Change buffer status to 2
-    CHBUFFSTATUS2:
-        MOV r2, 2
-        SBCO r2, CONST_PRUSHAREDRAM, 0, 4 // Write 2 to the first 4 bytes of shared mem
+     MOV r2, 1 
+     SBCO r2, CONST_PRUSHAREDRAM, 0, 4 // Write 1 to the first 4 bytes of shared mem
         QBA INITV
-
     //Send event to host program
     MOV r31.b0, PRU0_ARM_INTERRUPT+16 
     HALT

@@ -33,7 +33,7 @@ Based on work done by Youngtae Jo.
 #define PRUSS0_SHARED_DATARAM    4
 #define SAMPLING_RATE 16000 //16khz
 #define BUFF_LENGTH SAMPLING_RATE
-#define PRU_SHARED_BUFF_SIZE 500
+#define PRU_SHARED_BUFF_SIZE 1000
 #define CNT_ONE_SEC SAMPLING_RATE / PRU_SHARED_BUFF_SIZE
 
 /******************************************************************************
@@ -58,8 +58,8 @@ int main (int argc, char* argv[])
 	FILE *fp_out;
     unsigned int ret;
     tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
-	int i = 0, cnt = 0, total_cnt = 0;
-	int target_buff = 1;
+	int i = 0; 
+	
 	int sampling_period = 0;
 
 	if(argc <= 2){
@@ -92,38 +92,24 @@ int main (int argc, char* argv[])
 	}
 
 	/* Executing PRU. */
-	printf("\tSampling started for %d seconds\n", sampling_period);
-    printf("\tCollecting");
-    prussdrv_exec_program (PRU_NUM, "./ADCCollector.bin"); 
+        printf("\tSampling started for %d seconds\n", sampling_period);
+        printf("\tCollecting");
+        prussdrv_exec_program (PRU_NUM, "./ADCCollector.bin"); 
 	/* Read ADC */
-	while(1){
+
 		while(1){
-			if(sharedMem_int[OFFSET_SHAREDRAM] == 1 && target_buff == 1){ // First buffer is ready
+			if(sharedMem_int[OFFSET_SHAREDRAM] == 1) { 
+				printf("\nGOT DATA\n");
 				for(i=0; i<PRU_SHARED_BUFF_SIZE; i++){
 					fprintf(fp_out, "%d\n", sharedMem_int[OFFSET_SHAREDRAM + i + 1]);
-				}
-				target_buff = 2;
+				} 
 				break;
-			}else if(sharedMem_int[OFFSET_SHAREDRAM] == 2 && target_buff == 2){ // Second buffer is ready
-				for(i=0; i<PRU_SHARED_BUFF_SIZE; i++){
-					fprintf(fp_out, "%d\n", sharedMem_int[OFFSET_SHAREDRAM + PRU_SHARED_BUFF_SIZE + i + 1]);
-				}
-				target_buff = 1;
-				break;
-			}
-		}
-        //TODO: fix this second/sample counting to be right
-		if(++cnt == CNT_ONE_SEC){
-			printf(".");
-			total_cnt += cnt;
-			cnt = 0;
-		}
+			} 
+	        }
 
-		if(total_cnt == CNT_ONE_SEC * sampling_period){
-			printf("\n\tINFO: Sampling completed.\n");
-			break;
-		}
-	}
+        //TODO: fix this second/sample counting to be right
+
+
 
 	fclose(fp_out);
     printf("\tINFO: PRU completed transfer.\r\n");
